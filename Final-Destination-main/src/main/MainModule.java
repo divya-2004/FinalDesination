@@ -2,6 +2,9 @@ package com.examly;
 import com.examly.entity.*;
 import com.examly.exception.*;
 import com.examly.service.*;
+import com.examly.util.DBConnectionUtil;
+import java.util.Date;
+import java.sql.*;
 import java.util.*;
 
 
@@ -120,6 +123,7 @@ public class MainModule {
     private static void placeOrder(){
         System.out.print("Enter customer ID: ");
         int customerId=scanner.nextInt();
+        if(!isCustomerExists(customerId)){System.out.println("Error: Customer Id is invalid");return;}
         System.out.print("Enter restaurant ID to place order: ");
         int restaurantId=scanner.nextInt();
 
@@ -160,6 +164,19 @@ public class MainModule {
             System.out.println("Failed to place order.");
         }
     }
+    private static boolean isCustomerExists(int customerId){
+        try(Connection conn=DBConnectionUtil.getConnection()){
+            String sql="select count(*) from customer where customerId=?";
+            PreparedStatement stmt=conn.prepareStatement(sql);
+            stmt.setInt(1, customerId);
+            ResultSet rs=stmt.executeQuery();
+            if(rs.next()){
+                return rs.getInt(1)>0;
+            }
+        }catch(SQLException e){
+            e.printStackTrace();
+        }return false;
+    }
     private static void viewOrders(){
         System.out.print("Enter customer ID to view orders: ");
         int customerId=scanner.nextInt();
@@ -192,7 +209,7 @@ public class MainModule {
             return;
         }
         int paymentId=(int)(Math.random()*1000)+1;
-        Payment payment= new Payment(0, orderId, new Date(), "Completed", amountPaid);
+        Payment payment= new Payment(0, orderId,  new Date(), "Completed", amountPaid);
         boolean success=paymentService.processPayment(payment);
         if(success){
             System.out.println("Payment successful! Order is now confirmed.");
@@ -203,6 +220,11 @@ public class MainModule {
     }
 
 }
+
+
+
+
+
 
 
 
